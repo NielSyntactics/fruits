@@ -6,6 +6,7 @@ use App\Models\Fruit;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFruitRequest;
+use App\Service\FruitsDatabaseService;
 
 class FruitController extends Controller
 {
@@ -14,10 +15,14 @@ class FruitController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(FruitsDatabaseService $fruitsDatabaseService)
     {
         //
-        $fruits = Fruit::all();
+        try {
+            $fruits = $fruitsDatabaseService->getAllFruitData();
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 422);
+        }
         return response()->json([
             'fruits'=>$fruits
         ]);
@@ -39,10 +44,14 @@ class FruitController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreFruitRequest $request)
+    public function store(StoreFruitRequest $request, FruitsDatabaseService $fruitsDatabaseService)
     {
         //
-        $fruit = Fruit::create($request->all());
+        try {
+            $fruit = $fruitsDatabaseService->storeFruitData($request);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 422);
+        }
 
         return response()->json([
             'message'   =>  "Product Save Succesfully",
@@ -56,10 +65,15 @@ class FruitController extends Controller
      * @param  \App\Models\Fruit  $fruit
      * @return \Illuminate\Http\Response
      */
-    public function show( $id )
+    public function show( $id ,FruitsDatabaseService $fruitsDatabaseService )
     {
         //
-        $fruit = Fruit::find($id);
+        try {
+            $fruit = $fruitsDatabaseService->getIndividualData($id);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 422);
+        }
+
         return response()->json([
             'fruit'   =>  $fruit,
         ]);
@@ -83,11 +97,15 @@ class FruitController extends Controller
      * @param  \App\Models\Fruit  $fruit
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(StoreFruitRequest $request, $id, FruitsDatabaseService $fruitsDatabaseService)
     {
         //
-        $fruit = Fruit::find($id);
-        $fruit->update($request->all());
+
+        try {
+            $fruit = $fruitsDatabaseService->updateFruitData($id, $request);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 422);
+        }
 
         return response()->json([
             'message'   => "fruit Updated Successfully!",
@@ -102,19 +120,36 @@ class FruitController extends Controller
      * @param  \App\Models\Fruit  $fruit
      * @return \Illuminate\Http\Response
      */
-    public function destroy( $id )
+    public function destroy( $id, FruitsDatabaseService $fruitsDatabaseService )
     {
-        $fruit = Fruit::find($id);
-        $fruit->delete();
+
+        try {
+            $fruit = $fruitsDatabaseService->getIndividualData($id);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception], 422);
+        }
+
+        if(!$fruit) {
+            return abort(404);
+        }
+
+        try {
+            $fruitsDatabaseService->deleteFruitData($fruit);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception], 422);
+        }
 
         return response()->json([
             'message' => 'Fruits Deleted Succesfully'
         ],200);
     }
-    public function search( $name ) {
+    public function search( $name, FruitsDatabaseService $fruitsDatabaseService ) {
 
-        $searchTerm = $name;
-        $fruits = Fruit::where('name','like','%'.$searchTerm.'%')->get();
+        try {
+            $fruits = $fruitsDatabaseService->searchFruitDataApi($name);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 422);
+        }
 
         return response()->json([
             'fruits'   =>  $fruits,

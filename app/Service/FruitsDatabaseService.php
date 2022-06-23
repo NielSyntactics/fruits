@@ -15,9 +15,12 @@ class FruitsDatabaseService {
         $fruit->status = '1';
 
         $fruit->save();
+
+        return $fruit;
+
     }
 
-    public function getDataForEdit($id) {
+    public function getIndividualData($id) {
         return  Fruit::find($id);
     }
 
@@ -25,6 +28,19 @@ class FruitsDatabaseService {
         $fruit = Fruit::find($id);
         $fruit->name = $request->name;
         $fruit->save();
+        return $fruit;
+    }
+
+    public function deleteFruitData ( $fruit ) {
+        $fruit->delete();
+    }
+
+    public function searchFruitData ($request) {
+        return Fruit::where('name','like','%'.$request->name.'%')->get();
+    }
+
+    public function searchFruitDataApi ($name) {
+        return Fruit::where('name','like','%'.$name.'%')->get();
     }
 
 }

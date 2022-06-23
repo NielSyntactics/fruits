@@ -45,13 +45,13 @@ class FruitController extends Controller
     public function edit( $id , FruitsDatabaseService $fruitsDatabaseService) {
 
         try {
-            $fruit = $fruitsDatabaseService->getDataForEdit($id);
+            $fruit = $fruitsDatabaseService->getIndividualData($id);
         } catch (\Exception $exception) {
             return response()->json(['error' => $exception->getMessage()], 422);
         }
 
         if(!$fruit) {
-            return 404;
+            return abort(404);
         }
 
         return view('Fruits.edit')->with('fruit',$fruit);
@@ -64,27 +64,37 @@ class FruitController extends Controller
         } catch (\Exception $exception) {
             return response()->json(['error' => $exception->getMessage()], 422);
         }
-
-
-
         return redirect()->route('fruits.index')->with('update', 'Fruits Updated');
     }
 
-    public function destroy( $id ) {
-        $fruit = Fruit::find($id);
-        if(!$fruit){
-            return 404;
+    public function destroy( $id, FruitsDatabaseService $fruitsDatabaseService ) {
+        try {
+            $fruit = $fruitsDatabaseService->getIndividualData($id);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception], 422);
         }
 
-        $fruit->delete();
+        if(!$fruit) {
+            return abort(404);
+        }
+
+        try {
+            $fruitsDatabaseService->deleteFruitData($fruit);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception], 422);
+        }
+
 
         return redirect()->route('fruits.index')->with('delete', 'Fruits Deleted');
     }
 
-    public function search( Request $request ) {
+    public function search( Request $request, FruitsDatabaseService $fruitsDatabaseService  ) {
 
-        $searchTerm = $request->name;
-        $fruits = Fruit::where('name','like','%'.$searchTerm.'%')->get();
+        try {
+            $fruits = $fruitsDatabaseService->searchFruitData($request);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 422);
+        }
 
         return view('Fruits.index')->with('fruits',$fruits);
     }
